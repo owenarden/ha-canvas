@@ -38,17 +38,16 @@ Bring Canvas assignments directly into Home Assistant. This fork creates a maste
 
 ## Four-week dashboard example
 
-This repository includes optional Home Assistant examples under `examples/home_assistant/`:
+This repository includes optional generic Home Assistant examples under `examples/home_assistant/`:
 
-- `packages/margaret_canvas.yaml` — a trigger-based template sensor that calls `calendar.get_events` every 15 minutes and stores the next 28 days of assignments.
-- `lovelace/margaret_canvas_4_week_card.yaml` — a core Markdown Lovelace card that groups assignments by due date and visually distinguishes completed, missing, late, excused, and upcoming work.
+- `packages/student_canvas.yaml` — a trigger-based template sensor that calls `calendar.get_events` every 15 minutes and stores the next 28 days of assignments.
+- `lovelace/student_canvas_4_week_card.yaml` — a core Markdown Lovelace card that groups assignments by due date and visually distinguishes completed, missing, late, excused, and upcoming work.
 
-The example files currently reference:
+The package uses `calendar.canvas_student_calendar` as a placeholder for the master Canvas calendar entity. Replace that placeholder with the actual master calendar entity created by the integration in your Home Assistant instance.
 
-- `calendar.canvas_margaret_arden_margaret_arden_calendar`
-- `sensor.margaret_canvas_assignments_28_days`
+The example sensor created by the package is:
 
-Adjust those entity IDs if your Home Assistant instance uses different names.
+- `sensor.canvas_student_assignments_28_days`
 
 To use Home Assistant packages, ensure `configuration.yaml` contains:
 
@@ -57,7 +56,7 @@ homeassistant:
   packages: !include_dir_named packages
 ```
 
-Then copy the package example into `/config/packages/`, restart Home Assistant, and add the Lovelace YAML as a Manual card.
+Then copy `examples/home_assistant/packages/student_canvas.yaml` into `/config/packages/`, replace the calendar entity placeholder, restart Home Assistant, and add the Lovelace YAML from `examples/home_assistant/lovelace/student_canvas_4_week_card.yaml` as a Manual card.
 
 ## Notes
 - The coordinator still refreshes basic profile/course/upcoming-event data every 15 minutes.
