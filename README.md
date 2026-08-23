@@ -1,22 +1,24 @@
 # Canvas LMS for Home Assistant
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Fiveol&repository=ha-canvas&category=Integration)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=owenarden&repository=ha-canvas&category=Integration)
 
-Bring your school assignments directly into Home Assistant. This integration creates a master calendar for your account and individual calendars for every active course you are enrolled in.
+Bring Canvas assignments directly into Home Assistant. This fork creates a master calendar for the logged-in student account and individual calendars for active courses.
 
 ## Features
-- **Master Calendar**: A single view of all upcoming assignments.
-- **Per-Course Calendars**: Separate entities for each class (e.g., `calendar.name_math_101`).
-- **Assignment Details**: Descriptions include the course name and points possible.
-- **Easy Links**: Clicking an event in the HA Calendar will provide the URL directly to the Canvas assignment.
+- **Master Calendar**: A single view across all active courses.
+- **Per-Course Calendars**: Separate calendar entities for each active class.
+- **Arbitrary Calendar Ranges**: Home Assistant date-range queries fetch assignments directly from Canvas rather than relying only on Canvas's rolling upcoming-events feed.
+- **Submission State**: Calendar descriptions include workflow status plus Canvas submission metadata such as missing, late, excused, submission type, and submitted timestamp when available.
+- **Assignment Details**: Course name and points possible are included.
+- **Easy Links**: Calendar events link directly to the Canvas assignment.
 
 ## Installation
 
 ### HACS (Recommended)
 1. Ensure [HACS](https://hacs.xyz/) is installed.
 2. Click the badge above or navigate to HACS > Integrations > 3-dot menu > Custom Repositories.
-3. Add `https://github.com/Fiveol/ha-canvas` with category `Integration`.
-4. Search for "Canvas Student" and install.
+3. Add `https://github.com/owenarden/ha-canvas` with category `Integration`.
+4. Search for **Canvas Student** and install it.
 5. Restart Home Assistant.
 
 ### Manual
@@ -27,16 +29,40 @@ Bring your school assignments directly into Home Assistant. This integration cre
 ## Configuration
 1. Go to **Settings > Devices & Services > Add Integration**.
 2. Search for **Canvas Student**.
-3. **Base URL**: Enter your school's Canvas URL (e.g., `https://canvas.instructure.com` or `https://university.instructure.com`).
-4. **Access Token**: 
-   - Log into Canvas.
+3. **Base URL**: Enter the school's Canvas URL.
+4. **Access Token**:
+   - Log into the student's Canvas account.
    - Go to **Account > Settings**.
-   - Scroll down to **Approved Integrations** and click **+ New Access Token**.
-   - Copy and paste that token into Home Assistant.
+   - Scroll to **Approved Integrations** and create a new access token.
+   - Paste that token into Home Assistant.
 
-## Limitations
-- **Rolling Window**: This integration uses the "Upcoming Events" endpoint. It displays assignments due in the near future (typically the next few weeks). It is not intended for historical tracking or the entire semester at once.
-- **Sync Interval**: Data refreshes every 15 minutes to keep your dashboard updated without stressing the Canvas API.
+## Four-week dashboard example
+
+This repository includes optional Home Assistant examples under `examples/home_assistant/`:
+
+- `packages/margaret_canvas.yaml` — a trigger-based template sensor that calls `calendar.get_events` every 15 minutes and stores the next 28 days of assignments.
+- `lovelace/margaret_canvas_4_week_card.yaml` — a core Markdown Lovelace card that groups assignments by due date and visually distinguishes completed, missing, late, excused, and upcoming work.
+
+The example files currently reference:
+
+- `calendar.canvas_margaret_arden_margaret_arden_calendar`
+- `sensor.margaret_canvas_assignments_28_days`
+
+Adjust those entity IDs if your Home Assistant instance uses different names.
+
+To use Home Assistant packages, ensure `configuration.yaml` contains:
+
+```yaml
+homeassistant:
+  packages: !include_dir_named packages
+```
+
+Then copy the package example into `/config/packages/`, restart Home Assistant, and add the Lovelace YAML as a Manual card.
+
+## Notes
+- The coordinator still refreshes basic profile/course/upcoming-event data every 15 minutes.
+- Home Assistant calendar range queries fetch assignment data directly per active course and follow Canvas pagination.
+- Submission flags reflect what Canvas reports. An `unsubmitted` assignment is not necessarily missing; use the `Missing`, `Late`, `Excused`, and submission-type fields to distinguish cases.
 
 ---
 *Disclaimer: This integration is not affiliated with or endorsed by Instructure/Canvas LMS.*
