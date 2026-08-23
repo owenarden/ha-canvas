@@ -1,0 +1,69 @@
+type: markdown
+title: 📚 School — Next 4 Weeks
+entity_id:
+  - sensor.margaret_canvas_assignments_28_days
+content: |-
+  {% set events =
+      state_attr('sensor.margaret_canvas_assignments_28_days', 'events')
+      | default([], true) %}
+
+  {% if events | count == 0 %}
+
+  _No assignments in the next four weeks._
+
+  {% else %}
+
+  {% set ns = namespace(last_day='') %}
+
+  {% for e in events | sort(attribute='start') %}
+
+    {% set dt = as_local(as_datetime(e.start)) %}
+    {% set day = dt.strftime('%Y-%m-%d') %}
+    {% set desc = e.description | default('', true) %}
+    {% set url = e.location | default('', true) %}
+    {% set course =
+        desc.split('\n')[0]
+        | replace('Course: ', '') %}
+
+    {% set completed =
+        'Status: graded' in desc
+        or 'Status: submitted' in desc
+        or 'Status: pending_review' in desc
+        or 'Submitted:' in desc %}
+
+    {% set missing = 'Missing: yes' in desc %}
+    {% set late = 'Late: yes' in desc %}
+    {% set excused = 'Excused: yes' in desc %}
+
+    {% if day != ns.last_day %}
+
+  ### {{ dt.strftime('%A, %B %-d') }}
+
+      {% set ns.last_day = day %}
+    {% endif %}
+
+    {% if excused %}
+  🚫 ~~[{{ e.summary }}]({{ url }})~~  
+  <small>{{ course }} · excused</small>
+
+    {% elif completed %}
+  ✅ ~~[{{ e.summary }}]({{ url }})~~  
+  <small>{{ course }} · completed</small>
+
+    {% elif missing %}
+  ⚠️ **[{{ e.summary }}]({{ url }})**  
+  <small>{{ course }} · **MISSING** · due {{ dt.strftime('%-I:%M %p') }}</small>
+
+    {% elif late %}
+  ⏰ **[{{ e.summary }}]({{ url }})**  
+  <small>{{ course }} · late · due {{ dt.strftime('%-I:%M %p') }}</small>
+
+    {% else %}
+  ⏳ **[{{ e.summary }}]({{ url }})**  
+  <small>{{ course }} · due {{ dt.strftime('%-I:%M %p') }}</small>
+
+    {% endif %}
+
+  {% endfor %}
+
+  {% endif %}
