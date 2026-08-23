@@ -1,4 +1,30 @@
-# Replace this with the master Canvas calendar entity created by the integration.
-# Example: calendar.canvas_student_student_calendar
+# Replace calendar.canvas_student_calendar below with the master Canvas calendar
+# entity created by the integration in your Home Assistant instance.
 
-{% set _ = none %}
+template:
+  - triggers:
+      - trigger: homeassistant
+        event: start
+      - trigger: time_pattern
+        minutes: "/15"
+
+    actions:
+      - action: calendar.get_events
+        target:
+          entity_id: calendar.canvas_student_calendar
+        data:
+          duration:
+            days: 28
+        response_variable: canvas_agenda
+
+    sensor:
+      - name: "Canvas Student Assignments 28 Days"
+        unique_id: canvas_student_assignments_28_days
+        icon: mdi:school
+        state: >
+          {% set cal = 'calendar.canvas_student_calendar' %}
+          {{ canvas_agenda.get(cal, {}).get('events', []) | count }}
+        attributes:
+          events: >
+            {% set cal = 'calendar.canvas_student_calendar' %}
+            {{ canvas_agenda.get(cal, {}).get('events', []) }}
