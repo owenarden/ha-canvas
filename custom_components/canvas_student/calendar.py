@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 import aiohttp
 import homeassistant.util.dt as dt_util
@@ -8,6 +9,8 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, CONF_BASE_URL, CONF_ACCESS_TOKEN
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -139,8 +142,6 @@ class CanvasCalendarEntity(CoordinatorEntity, CalendarEntity):
         if workflow_state in {"submitted", "graded", "pending_review"}:
             return True
 
-        # Some Canvas installations expose a timestamp before/without the
-        # workflow state we expect. A real submission timestamp is sufficient.
         return bool(submitted_at)
 
     async def _request_assignment_page(self, session, url, params=None):
@@ -203,7 +204,32 @@ class CanvasCalendarEntity(CoordinatorEntity, CalendarEntity):
             if due_dt < range_start or due_dt >= range_end:
                 continue
 
-            if self._is_completed(assignment):
+            submission = assignment.get("submission")
+            workflow_state = (
+                submission.get("workflow_state")
+                if isinstance(submission, dict)
+                else None
+            )
+            submitted_at = (
+                submission.get("submitted_at")
+                if isinstance(submission, dict)
+                else None
+            )
+            filtered = self._is_completed(assignment)
+
+            _LOGGER.warning(
+                "Canvas assignment status: course=%s assignment_id=%s name=%r "
+                "workflow_state=%r submitted_at=%r filtered=%s submission=%r",
+                course_name,
+                assignment.get("id"),
+                assignment.get("name"),
+                workflow_state,
+                submitted_at,
+                filtered,
+                submission,
+            )
+
+            if filtered:
                 continue
 
             points = assignment.get("points_possible")
