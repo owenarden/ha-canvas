@@ -215,26 +215,26 @@ class CanvasCalendarEntity(CoordinatorEntity, CalendarEntity):
                 if isinstance(submission, dict)
                 else None
             )
-            filtered = self._is_completed(assignment)
+            completed = self._is_completed(assignment)
 
             _LOGGER.warning(
                 "Canvas assignment status: course=%s assignment_id=%s name=%r "
-                "workflow_state=%r submitted_at=%r filtered=%s submission=%r",
+                "workflow_state=%r submitted_at=%r completed=%s submission=%r",
                 course_name,
                 assignment.get("id"),
                 assignment.get("name"),
                 workflow_state,
                 submitted_at,
-                filtered,
+                completed,
                 submission,
             )
-
-            if filtered:
-                continue
 
             points = assignment.get("points_possible")
             points_str = f"\nPoints: {points}" if points is not None else ""
             status_str = f"\nStatus: {workflow_state or 'unknown'}"
+            submitted_str = (
+                f"\nSubmitted: {submitted_at}" if submitted_at else ""
+            )
 
             events.append(
                 CalendarEvent(
@@ -242,7 +242,7 @@ class CanvasCalendarEntity(CoordinatorEntity, CalendarEntity):
                     start=due_dt,
                     end=due_dt,
                     description=(
-                        f"Course: {course_name}{points_str}{status_str}"
+                        f"Course: {course_name}{points_str}{status_str}{submitted_str}"
                     ),
                     location=assignment.get("html_url", ""),
                 )
