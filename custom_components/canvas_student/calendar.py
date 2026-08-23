@@ -234,13 +234,16 @@ class CanvasCalendarEntity(CoordinatorEntity, CalendarEntity):
 
             points = assignment.get("points_possible")
             points_str = f"\nPoints: {points}" if points is not None else ""
+            status_str = f"\nStatus: {workflow_state or 'unknown'}"
 
             events.append(
                 CalendarEvent(
                     summary=assignment.get("name", "Assignment"),
                     start=due_dt,
                     end=due_dt,
-                    description=f"Course: {course_name}{points_str}",
+                    description=(
+                        f"Course: {course_name}{points_str}{status_str}"
+                    ),
                     location=assignment.get("html_url", ""),
                 )
             )
