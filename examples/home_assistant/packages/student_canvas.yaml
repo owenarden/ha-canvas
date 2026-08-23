@@ -1,0 +1,4 @@
+# Replace this with the master Canvas calendar entity created by the integration.
+# Example: calendar.canvas_student_student_calendar
+
+{% set _ = none %}
