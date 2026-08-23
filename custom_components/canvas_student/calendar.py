@@ -129,21 +129,6 @@ class CanvasCalendarEntity(CoordinatorEntity, CalendarEntity):
                 )
         return f"Course {course_id}"
 
-    @staticmethod
-    def _is_completed(assignment):
-        """Return True when Canvas says the current student turned it in."""
-        submission = assignment.get("submission")
-        if not isinstance(submission, dict):
-            return False
-
-        workflow_state = submission.get("workflow_state")
-        submitted_at = submission.get("submitted_at")
-
-        if workflow_state in {"submitted", "graded", "pending_review"}:
-            return True
-
-        return bool(submitted_at)
-
     async def _request_assignment_page(self, session, url, params=None):
         headers = {"Authorization": f"Bearer {self._token}"}
         async with session.get(url, headers=headers, params=params) as response:
@@ -205,45 +190,50 @@ class CanvasCalendarEntity(CoordinatorEntity, CalendarEntity):
                 continue
 
             submission = assignment.get("submission")
-            workflow_state = (
-                submission.get("workflow_state")
-                if isinstance(submission, dict)
-                else None
-            )
-            submitted_at = (
-                submission.get("submitted_at")
-                if isinstance(submission, dict)
-                else None
-            )
-            completed = self._is_completed(assignment)
+            if not isinstance(submission, dict):
+                submission = {}
 
-            _LOGGER.warning(
+            workflow_state = submission.get("workflow_state")
+            submitted_at = submission.get("submitted_at")
+            missing = submission.get("missing")
+            late = submission.get("late")
+            excused = submission.get("excused")
+            submission_type = submission.get("submission_type")
+
+            _LOGGER.debug(
                 "Canvas assignment status: course=%s assignment_id=%s name=%r "
-                "workflow_state=%r submitted_at=%r completed=%s submission=%r",
+                "workflow_state=%r submitted_at=%r missing=%r late=%r excused=%r "
+                "submission_type=%r",
                 course_name,
                 assignment.get("id"),
                 assignment.get("name"),
                 workflow_state,
                 submitted_at,
-                completed,
-                submission,
+                missing,
+                late,
+                excused,
+                submission_type,
             )
 
             points = assignment.get("points_possible")
-            points_str = f"\nPoints: {points}" if points is not None else ""
-            status_str = f"\nStatus: {workflow_state or 'unknown'}"
-            submitted_str = (
-                f"\nSubmitted: {submitted_at}" if submitted_at else ""
-            )
+            description_lines = [f"Course: {course_name}"]
+            if points is not None:
+                description_lines.append(f"Points: {points}")
+            description_lines.append(f"Status: {workflow_state or 'unknown'}")
+            description_lines.append(f"Missing: {'yes' if missing else 'no'}")
+            description_lines.append(f"Late: {'yes' if late else 'no'}")
+            description_lines.append(f"Excused: {'yes' if excused else 'no'}")
+            if submission_type:
+                description_lines.append(f"Submission type: {submission_type}")
+            if submitted_at:
+                description_lines.append(f"Submitted: {submitted_at}")
 
             events.append(
                 CalendarEvent(
                     summary=assignment.get("name", "Assignment"),
                     start=due_dt,
                     end=due_dt,
-                    description=(
-                        f"Course: {course_name}{points_str}{status_str}{submitted_str}"
-                    ),
+                    description="\n".join(description_lines),
                     location=assignment.get("html_url", ""),
                 )
             )
